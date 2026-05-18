@@ -63,11 +63,8 @@ Create a `.env` file in the project root directory.
 Example:
 
 ```env
-OPEN_RAIL_USERNAME=your_username
-OPEN_RAIL_PASSWORD=your_password
-OPEN_RAIL_HOST=your_host
-OPEN_RAIL_PORT=your_port
-OPEN_RAIL_TOPIC=your_topic
+NR_USERNAME=your_username
+NR_PASSWORD=your_password
 
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
