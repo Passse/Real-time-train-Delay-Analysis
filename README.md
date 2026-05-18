@@ -104,49 +104,66 @@ CREATE DATABASE rail_db;
 
 ## How to Run
 
-Run the Spark Structured Streaming pipeline:
+The pipeline should be started in the following order:
+
+1. Start PostgreSQL.
+2. Run the movement collector to collect raw real-time movement messages.
+3. Run the Spark Structured Streaming pipeline to process and aggregate the collected data.
+
+### 1. Start PostgreSQL
+
+If PostgreSQL is managed with Docker Compose, start it from the project root directory:
 
 ```bash
-python src/main/pySpark/structured_streaming_pipeline.py
+docker compose up -d
 ```
 
-The pipeline will:
+You can check whether the PostgreSQL container is running with:
 
-1. Load the raw movement stream.
-2. Process each micro-batch every 30 seconds.
-3. Extract movement and cancellation events.
-4. Calculate delay information.
-5. Add station or location names using CORPUS data.
-6. Write the processed results to PostgreSQL.
+```bash
+docker ps
+```
 
-To stop the streaming pipeline, press:
+### 2. Run the movement collector
+
+The movement collector subscribes to the Network Rail MOVEMENT feed and stores raw movement messages under `data/raw_real/`.
+
+Run it with:
+
+```bash
+python src/main/pySpark/movement_collector.py
+```
+
+The collector keeps running and continuously writes incoming messages to local JSON files.
+
+To stop the collector, press:
 
 ```bash
 Ctrl + C
 ```
 
-## Output Tables
+### 3. Run the Spark Structured Streaming pipeline
 
-The processed data is written to PostgreSQL.
+After raw movement messages are being collected, run the Spark processing pipeline:
 
-Main output tables include:
-
-```text
-movements
-cancellations
+```bash
+python src/main/pySpark/structured_streaming_pipeline.py
 ```
 
-These tables can later be used for:
+The Spark pipeline will:
 
-- station-based aggregation
+1. Read raw movement messages.
+2. Process each micro-batch.
+3. Extract movement and cancellation events.
+4. Calculate delay information.
+5. Add station or location names using CORPUS data.
+6. Write the processed results to PostgreSQL.
 
-- delay frequency analysis
+To stop the Spark pipeline, press:
 
-- cancellation counting
-
-- abnormal disruption detection
-
-- dashboard visualization
+```bash
+Ctrl + C
+```
 
 ## Authors
 
