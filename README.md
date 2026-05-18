@@ -20,6 +20,27 @@ The pipeline ingests train movement events, cleans and enriches the data with st
 - PostgreSQL
 - Docker
 
+## Current Features
+
+- Parse real-time movement events
+- Extract relevant train, time, and location attributes
+- Join movement events with static station/location data
+- Compute simple aggregation statistics by station and time window
+- Store aggregated results in PostgreSQL
+
+## Planned Features
+
+- Abnormal delay and disruption detection
+- Dashboard for visualizing delay patterns
+- Optional clustering of stations with similar disruption behavior
+
+## Authors
+
+S.Qie and Ashraf Jafarli
+
+University of Bassel
+Distributed Information Systems, Spring 2026
+
 ## Pipeline
 
 ```text
