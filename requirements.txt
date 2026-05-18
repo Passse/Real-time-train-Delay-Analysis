@@ -1,0 +1,6 @@
+pyspark
+pandas
+psycopg2-binary
+python-dotenv
+stomp.py
+matplotlib
