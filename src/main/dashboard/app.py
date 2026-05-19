@@ -6,6 +6,7 @@ import psycopg2
 import streamlit as st
 from dotenv import load_dotenv
 
+
 load_dotenv()
 
 DB_CONFIG = {
@@ -18,6 +19,7 @@ DB_CONFIG = {
 
 MOVEMENTS_TABLE = "raw_train_movements"
 CANCELLATIONS_TABLE = "raw_train_cancellations"
+ABNORMAL_TABLE = "abnormal_events"
 
 STATION_COL = "local_name"
 STATUS_COL = "variation_status"
@@ -25,6 +27,14 @@ DELAY_COL = "delay_seconds"
 MOVEMENT_TIME_COL = "actual_timestamp"
 CANCELLATION_TIME_COL = "canx_timestamp"
 CANCELLATION_REASON_COL = "canx_reason_code"
+ABNORMAL_TIME_COL = "event_timestamp"
+ANOMALY_TYPE_COL = "anomaly_type"
+
+ANOMALY_TYPE_LABELS = {
+    "large_delay": "Large Delay",
+    "station_delay_outlier": "Station Delay Outlier",
+    "cancellation_spike": "Cancellation Spike",
+}
 
 def _get_connection():
     return psycopg2.connect(**DB_CONFIG)
@@ -88,11 +98,37 @@ def prepare_cancellations(cancellations: pd.DataFrame) -> pd.DataFrame:
 
     return cancellations
 
-# The delay/cancellation over time
+def prepare_abnormal_events(abnormal_events: pd.DataFrame) -> pd.DataFrame:
+    if abnormal_events.empty:
+        return abnormal_events
+
+    if ABNORMAL_TIME_COL in abnormal_events.columns:
+        abnormal_events[ABNORMAL_TIME_COL] = pd.to_datetime(
+            abnormal_events[ABNORMAL_TIME_COL],
+            errors="coerce",
+        )
+
+    deduplicate_cols = [
+        "event_source",
+        "train_id",
+        "loc_stanox",
+        "local_name",
+        "event_type",
+        "event_timestamp",
+        "anomaly_type",
+    ]
+
+    existing_cols = [col for col in deduplicate_cols if col in abnormal_events.columns]
+    abnormal_events = abnormal_events.drop_duplicates(subset=existing_cols).copy()
+
+    return abnormal_events
+
+# The delay/cancellation/abnormal over time
 def count_by_time(df: pd.DataFrame, time_col: str, count_col: str, frequency: str) -> pd.DataFrame:
     if df.empty or time_col not in df.columns:
         return pd.DataFrame(columns=[time_col, count_col])
 
+    # Calculate the events over time with specified frequency
     result = (
         df.dropna(subset=[time_col])
         .set_index(time_col)
@@ -126,6 +162,7 @@ def main():
     try:
         movements = prepare_movements(_read_table(MOVEMENTS_TABLE))
         cancellations = prepare_cancellations(_read_table(CANCELLATIONS_TABLE))
+        abnormal_events = prepare_abnormal_events(_read_table(ABNORMAL_TABLE))
     except Exception as e:
         st.error(f"Could not read data from PostgreSQL: {e}")
         st.stop()
@@ -138,11 +175,12 @@ def main():
     avg_delay = movements["delay_minutes"].dropna().mean() if "delay_minutes" in movements.columns else None
 
     # The overall event status
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric("Movement events", f"{len(movements):,}")
     col2.metric("Delayed events", f"{len(delayed):,}")
     col3.metric("Cancellation events", f"{len(cancellations):,}")
-    col4.metric("Average delay", f"{avg_delay:.2f} min" if avg_delay is not None and pd.notna(avg_delay) else "N/A")
+    col4.metric("Abnormal events", f"{len(abnormal_events):,}")
+    col5.metric("Average delay", f"{avg_delay:.2f} min" if avg_delay is not None and pd.notna(avg_delay) else "N/A")
 
     st.divider()
 
@@ -188,6 +226,29 @@ def main():
         else:
             st.info("No cancellation reason data available.")
 
+    left, right = st.columns(2)
+
+    with left:
+        st.subheader("Abnormal Events Type Distribution")
+        if ANOMALY_TYPE_COL in abnormal_events.columns and not abnormal_events.empty:
+            anomaly_distribution = (
+                abnormal_events[ANOMALY_TYPE_COL]
+                .fillna("unknown")
+                .replace(ANOMALY_TYPE_LABELS)
+                .value_counts()
+            )
+            st.bar_chart(anomaly_distribution)
+        else:
+            st.info("No abnormal event data available.")
+
+    with right:
+        st.subheader("Top Stations by Abnormal Events")
+        if STATION_COL in abnormal_events.columns and not abnormal_events.empty:
+            top_abnormal_stations = abnormal_events[STATION_COL].fillna("unknown").value_counts().head(10)
+            st.bar_chart(top_abnormal_stations)
+        else:
+            st.info("No station-level abnormal event data available.")
+
     st.divider()
 
     st.subheader("Delayed Events Over Time")
@@ -209,11 +270,26 @@ def main():
     else:
         st.info("No cancellation events available.")
 
+    st.subheader("Abnormal Events Over Time")
+    abnormal_over_time = count_by_time(
+        abnormal_events,
+        ABNORMAL_TIME_COL,
+        "abnormal_count",
+        aggregation_level,
+    )
+    if not abnormal_over_time.empty:
+        st.line_chart(abnormal_over_time, x=ABNORMAL_TIME_COL, y="abnormal_count")
+    else:
+        st.info("No abnormal events available.")
+
     with st.expander("Preview movement data"):
         st.dataframe(movements.head(100), use_container_width=True)
 
     with st.expander("Preview cancellation data"):
         st.dataframe(cancellations.head(100), use_container_width=True)
+
+    with st.expander("Preview abnormal events"):
+        st.dataframe(abnormal_events.head(100), use_container_width=True)
 
     st.caption(f"Last refresh: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}")
 

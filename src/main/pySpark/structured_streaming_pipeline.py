@@ -1,15 +1,15 @@
 from py4j.protocol import Py4JError, Py4JNetworkError
 
+from ApacheSpark.src.main.analysis.abnormal_detection import run_abnormal_detection
 from ApacheSpark.src.main.pySpark.loaders import load_corpus, load_raw_stream, spark
 from ApacheSpark.src.main.pySpark.postgres_writer import write_movements_to_postgres, write_cancellations_to_postgres
 from ApacheSpark.src.main.pySpark.transforms import extract_cancellations, extract_movements, calculate_delay, \
     add_location_names
 
+corpus_df = load_corpus()
 
 def process_batch(raw_df, batch_id):
     print(f"Processing batch {batch_id}")
-
-    corpus_df = load_corpus()
 
     cancellation_df = extract_cancellations(raw_df)
     movement_df = extract_movements(raw_df)
@@ -20,6 +20,11 @@ def process_batch(raw_df, batch_id):
 
     write_movements_to_postgres(delay_with_location)
     write_cancellations_to_postgres(cancellation_with_location)
+
+    try:
+        run_abnormal_detection()
+    except Exception as e:
+        print(f"Abnormal detection failed in batch {batch_id}: {e}")
 
 def main():
     raw_stream_df = load_raw_stream()
