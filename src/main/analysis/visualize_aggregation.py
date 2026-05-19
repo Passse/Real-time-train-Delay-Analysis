@@ -122,6 +122,7 @@ def visualize_movements():
     else:
         print(f"Skip average delay chart: missing column {delay_col}")
 
+    # Delay overtime
     if time_col in movements.columns and not delayed.empty:
         delayed = delayed.copy()
         delayed[time_col] = pd.to_datetime(delayed[time_col], unit="ms", errors="coerce")

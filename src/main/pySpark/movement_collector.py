@@ -48,7 +48,7 @@ def main():
     if not USERNAME or not PASSWORD:
         raise ValueError("Please provide both username and password in the .env file")
 
-    conn = stomp.Connection12([(HOST, PORT)])
+    conn = stomp.Connection12([(HOST, PORT)], heartbeats=(5000,5000))
     conn.set_listener("", MovementListener())
 
     conn.connect(
