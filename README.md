@@ -27,11 +27,11 @@ The pipeline ingests train movement events, cleans and enriches the data with st
 - Join movement events with static station/location data
 - Compute simple aggregation statistics by station and time window
 - Store aggregated results in PostgreSQL
+- Abnormal delay and disruption detection
+- Dashboard for visualizing delay patterns
 
 ## Planned Features
 
-- Abnormal delay and disruption detection
-- Dashboard for visualizing delay patterns
 - Optional clustering of stations with similar disruption behavior
 
 ## Installation

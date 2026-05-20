@@ -13,6 +13,7 @@ def process_batch(raw_df, batch_id):
 
     cancellation_df = extract_cancellations(raw_df)
     movement_df = extract_movements(raw_df)
+
     delay_df = calculate_delay(movement_df)
 
     cancellation_with_location = add_location_names(cancellation_df, corpus_df)
