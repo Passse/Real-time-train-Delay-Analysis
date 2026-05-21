@@ -43,6 +43,7 @@ def create_abnormal_table():
         id SERIAL PRIMARY KEY,
         event_source TEXT,
         train_id TEXT,
+        alpha3 TEXT,
         loc_stanox TEXT,
         local_name TEXT,
         event_type TEXT,
@@ -77,6 +78,7 @@ def detect_large_delays(movements: pd.DataFrame) -> pd.DataFrame:
     result = pd.DataFrame({
         "event_source": "movement",
         "train_id": abnormal["train_id"],
+        "alpha3": abnormal["alpha3"],
         "loc_stanox": abnormal["loc_stanox"],
         "local_name": abnormal["local_name"],
         "event_type": abnormal["event_type"],
@@ -84,7 +86,7 @@ def detect_large_delays(movements: pd.DataFrame) -> pd.DataFrame:
         "delay_seconds": abnormal["delay_seconds"],
         "anomaly_type": "large_delay",
         "anomaly_score": abnormal["delay_seconds"],
-        "explanation": "Train delay is at least 15 minutes."
+        "explanation": "Train delay is at least 30 minutes."
     })
 
     return result
@@ -119,6 +121,7 @@ def detect_station_delay_outliers(movements: pd.DataFrame) -> pd.DataFrame:
     result = pd.DataFrame({
         "event_source": "movement",
         "train_id": abnormal["train_id"],
+        "alpha3": abnormal["alpha3"],
         "loc_stanox": abnormal["loc_stanox"],
         "local_name": abnormal["local_name"],
         "event_type": abnormal["event_type"],
@@ -158,6 +161,7 @@ def detect_cancellation_spikes(cancellations: pd.DataFrame) -> pd.DataFrame:
     result = pd.DataFrame({
         "event_source": "cancellation",
         "train_id": None,
+        "alpha3": None,
         "loc_stanox": None,
         "local_name": abnormal_windows[station_col],
         "event_type": "CANCELLATION_SPIKE",
@@ -184,6 +188,7 @@ def save_abnormal_events(abnormal_events: pd.DataFrame):
     columns = [
         "event_source",
         "train_id",
+        "alpha3",
         "loc_stanox",
         "local_name",
         "event_type",
@@ -200,6 +205,7 @@ def save_abnormal_events(abnormal_events: pd.DataFrame):
     INSERT INTO {ABNORMAL_TABLE} (
         event_source,
         train_id,
+        alpha3,
         loc_stanox,
         local_name,
         event_type,
@@ -209,7 +215,7 @@ def save_abnormal_events(abnormal_events: pd.DataFrame):
         anomaly_score,
         explanation
     )
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
     """
 
     rows = [
