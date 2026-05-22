@@ -106,6 +106,7 @@ The pipeline should be started in the following order:
 1. Start PostgreSQL.
 2. Run the movement collector to collect raw real-time movement messages.
 3. Run the Spark Structured Streaming pipeline to process and aggregate the collected data.
+4. Start the dashboard to visualize the processed results.
 
 ### 1. Start PostgreSQL
 
@@ -146,6 +147,15 @@ After raw movement messages are being collected, run the Spark processing pipeli
 ```bash
 python src/main/pySpark/structured_streaming_pipeline.py
 ```
+### 4. Start the dashboard
+
+After PostgreSQL contains processed aggregation and abnormal event results, start the dashboard:
+
+```bash
+streamlit run src/main/dashboard/app.py
+```
+
+The dashboard reads the processed results form PostgreSQL and visualized delay patterns, station-level statistics, and abnormal delay events.
 
 The Spark pipeline will:
 
