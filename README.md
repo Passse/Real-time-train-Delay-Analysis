@@ -11,6 +11,7 @@ The pipeline ingests train movement events, cleans and enriches the data with st
 
 - Network Rail MOVEMENT feed: real-time train movement events
 - Static SCHEDULE / CORPUS data: planned timetable and location reference data
+- Static station coordinate data: latitude and longitude information used for map visualization
 
 ## Technologies
 
@@ -24,7 +25,7 @@ The pipeline ingests train movement events, cleans and enriches the data with st
 
 - Parse real-time movement events
 - Extract relevant train, time, and location attributes
-- Join movement events with static station/location data
+- Join movement events with static station/location and coordinates data
 - Compute simple aggregation statistics by station and time window
 - Store aggregated results in PostgreSQL
 - Abnormal delay and disruption detection
@@ -163,7 +164,7 @@ The Spark pipeline will:
 2. Process each micro-batch.
 3. Extract movement and cancellation events.
 4. Calculate delay information.
-5. Add station or location names using CORPUS data.
+5. Add station or location names using CORPUS data and attach static station coordinates for map visualization.
 6. Write the processed results to PostgreSQL.
 
 To stop the Spark pipeline, press:
@@ -186,7 +187,7 @@ MOVEMENT stream
        ↓
 Spark Structured Streaming
        ↓
-clean + enrich with CORPUS
+clean + enrich with CORPUS and station coordinates
        ↓
 window aggregation
        ↓
@@ -197,3 +198,4 @@ Pandas / Python abnormal detection
 PostgreSQL table: abnormal_events
        ↓
 dashboard / report
+```
